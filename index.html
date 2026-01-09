@@ -6,68 +6,25 @@
 <title>KILLER.EXE – Detective Case</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;width:100%;font-family:'Courier New',monospace;background:#111;color:#111;display:flex;justify-content:center;align-items:center;}
+html,body{height:100%;width:100%;font-family:'Courier New',monospace;background:#111;color:#fff;display:flex;justify-content:center;align-items:center;}
 #game{position:relative;z-index:2;width:95%;max-width:480px;padding:20px;text-align:center;background:#222;border-radius:15px;box-shadow:0 0 20px rgba(255,255,255,0.2);}
-
-/* HEADER */
-h1{
-  font-size:2em;
-  letter-spacing:2px;
-  color:#fff;
-  text-shadow:0 0 10px #fff,0 0 20px #fff;
-  margin-bottom:10px;
-}
-
-/* WHITE MASK */
-.mask{
-  width:120px;height:120px;margin:10px auto;
-  border-radius:50%;
-  background:white;
-  box-shadow:0 0 25px rgba(255,255,255,.6);
-}
-
-/* LEVEL INFO */
+h1{font-size:2em;letter-spacing:2px;color:#fff;text-shadow:0 0 10px #fff,0 0 20px #fff;margin-bottom:10px;}
+.mask{width:120px;height:120px;margin:10px auto;border-radius:50%;background:white;box-shadow:0 0 25px rgba(255,255,255,.6);}
 #levelInfo{margin:10px 0;font-size:1em;color:#ff5555;text-shadow:0 0 5px #ff5555;}
-
-/* STATEMENT CARDS */
 .case{display:flex;flex-direction:column;gap:10px;margin:15px 0;}
-.statement{
-  padding:12px;
-  border-left:4px solid #fff;
-  background:rgba(255,255,255,0.1);
-  color:#fff;
-  text-align:left;
-  transition:0.3s;
-  border-radius:5px;
-}
+.statement{padding:12px;border-left:4px solid #fff;background:rgba(255,255,255,0.1);color:#fff;text-align:left;transition:0.3s;border-radius:5px;}
 .statement[data-suspect="A"]{border-color:#00ffff;}
 .statement[data-suspect="B"]{border-color:#ff0;}
 .statement[data-suspect="C"]{border-color:#f00;}
 .statement:hover{background:rgba(255,255,255,0.2);transform:scale(1.02);}
-
-/* INPUT */
-#input{
-  width:100%;padding:12px;
-  background:#111;color:#fff;
-  border:2px solid #fff;font-size:1em;text-align:center;
-  outline:none;
-  margin-top:10px;
-  box-shadow:0 0 5px #fff;
-}
+#input{width:100%;padding:12px;background:#111;color:#fff;border:2px solid #fff;font-size:1em;text-align:center;outline:none;margin-top:10px;box-shadow:0 0 5px #fff;}
 #input::placeholder{color:#fff;opacity:0.7;}
-
-/* TIMER */
 #timer{margin-top:10px;font-size:1.2em;color:#ff5555;text-shadow:0 0 5px #ff5555;}
-
-/* WIN/LOSE ANIMATIONS */
 .success{animation:pulse 1.5s infinite;}
 @keyframes pulse{0%{opacity:1;}50%{opacity:.5;}100%{opacity:1;}}
 .glitch{animation:glitch 0.2s infinite;}
 @keyframes glitch{0%{transform:translate(0);}50%{transform:translate(2px,-2px);}100%{transform:translate(-2px,2px);}}
 </style>
-
-<!-- Google AdSense -->
-<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXX" crossorigin="anonymous"></script>
 
 </head>
 <body>
@@ -81,11 +38,12 @@ h1{
   <div id="timer"></div>
 </div>
 
-<!-- Audio -->
 <audio id="winSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_7e5c41a9a0.mp3"></audio>
 <audio id="failSound" src="https://cdn.pixabay.com/audio/2022/10/03/audio_946c87c1a4.mp3"></audio>
 
 <script>
+document.addEventListener("DOMContentLoaded",()=>{ // <-- ensure DOM is loaded
+
 // GAME LOGIC
 let level=1,lastSafeLevel=1,timer,timeLeft;
 const input=document.getElementById("input");
@@ -127,22 +85,6 @@ function startTimer(){
   },1000);
 }
 
-// GOOGLE ADS
-function showAd(){
-  const gameDiv=document.getElementById("game");
-  const adDiv=document.createElement("div");
-  adDiv.innerHTML=`
-    <ins class="adsbygoogle"
-         style="display:block; text-align:center; margin:10px 0;"
-         data-ad-client="ca-pub-XXXXXXXXXXXX"
-         data-ad-slot="YYYYYYYYYY"
-         data-ad-format="auto"></ins>
-    <script>
-      (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>`;
-  gameDiv.appendChild(adDiv);
-}
-
 // WIN / LOSE
 function win(){
   clearInterval(timer);
@@ -150,7 +92,6 @@ function win(){
   document.getElementById("winSound").play();
   setTimeout(()=>{
     document.body.classList.remove("success");
-    showAd();
     lastSafeLevel=level;
     level++;
     start();
@@ -162,7 +103,6 @@ function lose(){
   document.getElementById("failSound").play();
   setTimeout(()=>{
     document.body.classList.remove("glitch");
-    showAd();
     level=lastSafeLevel;
     start();
   },2000);
@@ -180,6 +120,8 @@ input.addEventListener("keydown",e=>{
 // START GAME
 function start(){generateCase();render();startTimer();}
 start();
+
+}); // DOMContentLoaded
 </script>
 
 </body>
