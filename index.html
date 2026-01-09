@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KILLER.EXE – Detective Case</title>
+<title>KILLER.EXE – Detective Story Mode</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
 html,body{height:100%;width:100%;font-family:'Courier New',monospace;background:#111;color:#fff;display:flex;justify-content:center;align-items:center;}
@@ -16,6 +16,8 @@ h1{font-size:2em;letter-spacing:2px;color:#fff;text-shadow:0 0 10px #fff,0 0 20p
 .statement[data-suspect="A"]{border-color:#00ffff;}
 .statement[data-suspect="B"]{border-color:#ff0;}
 .statement[data-suspect="C"]{border-color:#f00;}
+.statement[data-suspect="D"]{border-color:#f0f;}
+.statement[data-suspect="E"]{border-color:#0f0;}
 .statement:hover{background:rgba(255,255,255,0.2);transform:scale(1.02);}
 #input{width:100%;padding:12px;background:#111;color:#fff;border:2px solid #fff;font-size:1em;text-align:center;margin-top:10px;outline:none;box-shadow:0 0 5px #fff;}
 #input::placeholder{color:#fff;opacity:0.7;}
@@ -24,17 +26,19 @@ h1{font-size:2em;letter-spacing:2px;color:#fff;text-shadow:0 0 10px #fff,0 0 20p
 @keyframes pulse{0%{opacity:1;}50%{opacity:.5;}100%{opacity:1;}}
 .glitch{animation:glitch 0.2s infinite;}
 @keyframes glitch{0%{transform:translate(0);}50%{transform:translate(2px,-2px);}100%{transform:translate(-2px,2px);}}
+#message{margin-top:10px;font-size:1.3em;color:#0f0;text-shadow:0 0 5px #0f0;display:none;}
 </style>
 </head>
 <body>
 
 <div id="game">
   <div class="mask"></div>
-  <h1>KILLER.EXE</h1>
+  <h1>KILLER.EXE – Story Mode</h1>
   <div id="levelInfo"></div>
   <div class="case" id="case"></div>
-  <input id="input" placeholder="Enter suspect (A / B / C)" autofocus />
+  <input id="input" placeholder="Enter suspect (A / B / C / D / E)" autofocus />
   <div id="timer"></div>
+  <div id="message"></div>
 </div>
 
 <audio id="winSound" src="https://cdn.pixabay.com/audio/2022/03/15/audio_7e5c41a9a0.mp3"></audio>
@@ -47,19 +51,38 @@ let level=1,lastSafeLevel=1,timer,timeLeft;
 const input=document.getElementById("input");
 const caseBox=document.getElementById("case");
 const levelInfo=document.getElementById("levelInfo");
+const messageDiv=document.getElementById("message");
 
-function levelConfig(l){return {time: l===1?30:l===2?60:l===3?90:120};}
-
-// Generate killer case
-let killer,statements;
-function generateCase(){
-  const suspects=["A","B","C"];
-  killer=suspects[Math.floor(Math.random()*3)];
-  statements={
-    A:`${suspects[0]} says: "I didn’t do it."`,
-    B:`${suspects[1]} says: "Exactly one of us is lying."`,
-    C:`${suspects[2]} says: "A is the killer."`
+// Configure level: add more suspects as level increases
+function levelConfig(l){
+  return {
+    time: Math.min(30 + l*10, 180),
+    maxSuspects: Math.min(3 + Math.floor(l/2), 5) // Level 1-2: 3 suspects, Level3+: 4-5
   };
+}
+
+// Statements pool for suspects
+const statementsPool = {
+  A:["I didn’t do it.","I was in the kitchen.","I was asleep during the murder.","B is lying.","I was nowhere near the scene."],
+  B:["Exactly one of us is lying.","I have an alibi.","I was not there.","C seems suspicious.","I saw nothing unusual."],
+  C:["A is the killer.","I have no idea who did it.","B might be suspicious.","I was in my room.","I heard a noise outside."],
+  D:["I have an alibi.","I saw nothing.","A seems guilty.","I was in the garden.","B is lying."],
+  E:["I was reading.","I saw shadows.","C might be guilty.","I have no idea.","D is suspicious."]
+};
+
+// Generate killer case dynamically based on level
+let killer,statements,suspectsList;
+function generateCase(){
+  const cfg=levelConfig(level);
+  const allSuspects=["A","B","C","D","E"];
+  suspectsList=allSuspects.slice(0,cfg.maxSuspects);
+  killer=suspectsList[Math.floor(Math.random()*suspectsList.length)];
+
+  statements = {};
+  suspectsList.forEach(s=>{
+    const arr=statementsPool[s];
+    statements[s] = `${s} says: "${arr[Math.floor(Math.random()*arr.length)]}"`;
+  });
 }
 
 // Render statements
@@ -70,6 +93,7 @@ function render(){
     .map(([k,v])=>`<div class="statement" data-suspect="${k}"><b>${k}:</b> ${v}</div>`).join("");
   timeLeft=cfg.time;
   updateTimer();
+  messageDiv.style.display="none";
 }
 
 // Timer
@@ -88,22 +112,29 @@ function win(){
   clearInterval(timer);
   document.body.classList.add("success");
   document.getElementById("winSound").play();
+  messageDiv.innerText=`🎉 Detective solved the case! Level ${level} cleared.`;
+  messageDiv.style.color="#0f0";
+  messageDiv.style.display="block";
   setTimeout(()=>{
     document.body.classList.remove("success");
     lastSafeLevel=level;
     level++;
     start();
-  },1000);
+  },2500);
 }
+
 function lose(){
   clearInterval(timer);
   document.body.classList.add("glitch");
   document.getElementById("failSound").play();
+  messageDiv.innerText=`💀 Wrong guess! The case remains unsolved.`;
+  messageDiv.style.color="#f00";
+  messageDiv.style.display="block";
   setTimeout(()=>{
     document.body.classList.remove("glitch");
     level=lastSafeLevel;
     start();
-  },1000);
+  },2500);
 }
 
 // Player input
@@ -111,6 +142,7 @@ input.addEventListener("keydown",e=>{
   if(e.key==="Enter"){
     const val=input.value.toUpperCase().trim();
     input.value="";
+    if(!suspectsList.includes(val)) return;
     val===killer?win():lose();
   }
 });
