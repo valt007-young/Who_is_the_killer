@@ -15,207 +15,85 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Detective Lie Detector</title>
 
+
 <style>
 body{
-  margin:0;
-  font-family: Arial, sans-serif;
   background:#111;
-  color:#111;
+  color:#eee;
+  font-family: serif;
   display:flex;
   justify-content:center;
   align-items:center;
   height:100vh;
 }
-#game{
-  background:#fff;
-  width:92%;
+#box{
+  width:95%;
   max-width:500px;
+  border:2px solid #aaa;
   padding:20px;
-  border-radius:12px;
+  background:#1a1a1a;
 }
-h2{text-align:center;margin-top:0;}
-.statement{
-  margin:10px 0;
-  padding:10px;
-  background:#f4f4f4;
-  border-radius:8px;
-}
+h1{text-align:center;}
+.suspect{margin:15px 0;}
 button{
   width:100%;
   padding:10px;
-  margin-top:8px;
-  font-size:16px;
-  cursor:pointer;
-}
-#hint{
-  margin-top:12px;
-  padding:10px;
-  background:#eaeaea;
-  border-left:4px solid #000;
-}
-#result{
-  margin-top:12px;
-  font-weight:bold;
-  text-align:center;
+  margin-top:10px;
 }
 </style>
 </head>
+
 <body>
-
-<div id="game">
-  <h2>Detective Lie Detector</h2>
-
-  <div id="statements"></div>
-
-  <div id="buttons"></div>
-
-  <div id="hint"></div>
-  <div id="result"></div>
+<div id="box">
+  <h1>🕵️ DETECTIVE FILE</h1>
+  <p id="hint"></p>
+  <div id="suspects"></div>
 </div>
 
 <script>
-/* -------- STATEMENT POOLS (20 EACH) -------- */
+const cases = [
+{
+ hint:"One suspect claims innocence while secretly contradicting another statement.",
+ killer:"B",
+ statements:{
+  A:"I was in the library all evening, and I saw C leave before the murder occurred.",
+  B:"A is lying. I never left the dining hall and no one can place me near the scene.",
+  C:"I briefly stepped outside, but I clearly saw B near the crime room.",
+  D:"Everyone is hiding something, but C’s timeline does not add up."
+ }
+},
+{
+ hint:"The killer denies being seen, but two stories overlap incorrectly.",
+ killer:"C",
+ statements:{
+  A:"D and I stayed together the whole time.",
+  B:"I saw C washing hands nervously after the incident.",
+  C:"No one saw me after dinner.",
+  D:"A is telling the truth about staying with me."
+ }
+}
+];
 
-const pools = {
-A:[
-"I was in the server room checking logs when the breach happened.",
-"I never spoke to suspect C that night.",
-"I arrived after midnight, long after the alarm was triggered.",
-"I clearly remember suspect B leaving early.",
-"I had no access to the main control panel.",
-"I stayed near the cameras the whole time.",
-"I warned everyone that the firewall was unstable.",
-"I did not touch the power switch.",
-"I was monitoring traffic spikes, not users.",
-"I left exactly at 2:30 AM.",
-"I saw D near the terminal briefly.",
-"I was assigned only observation duty.",
-"I logged in using my personal credentials.",
-"I never disabled any security protocol.",
-"I heard the alert from another floor.",
-"I was the last person to enter the room.",
-"I did not see anyone tamper with the system.",
-"I was assisting security remotely.",
-"I followed protocol the entire shift.",
-"I reported everything I noticed."
-],
-B:[
-"I accessed the system earlier for maintenance.",
-"I never entered the control room.",
-"I was with suspect D during the outage.",
-"I left before any alarms sounded.",
-"I had no reason to touch the firewall.",
-"I was reviewing backups that night.",
-"I never spoke to suspect A.",
-"I logged out before midnight.",
-"I saw C acting nervous.",
-"I was only following instructions.",
-"I stayed in the common area.",
-"I never had admin privileges.",
-"I arrived late due to transport issues.",
-"I checked logs after the breach.",
-"I didn’t notice anything unusual.",
-"I was on standby the whole time.",
-"I had temporary access only.",
-"I was testing recovery systems.",
-"I was nowhere near the terminal.",
-"I reported directly to management."
-],
-C:[
-"I was monitoring network traffic alone.",
-"I never left my workstation.",
-"I spoke to suspect A briefly.",
-"I noticed unusual spikes before the breach.",
-"I was assigned night watch.",
-"I didn’t interact with suspect B.",
-"I stayed logged in the entire time.",
-"I had read-only access.",
-"I left only after clearance.",
-"I saw no one near the firewall.",
-"I was focused on diagnostics.",
-"I arrived earlier than usual.",
-"I never disabled alerts.",
-"I noticed delayed responses.",
-"I was troubleshooting latency.",
-"I had no admin password.",
-"I was documenting anomalies.",
-"I stayed calm during the alert.",
-"I didn’t touch the core system.",
-"I reported the spike immediately."
-],
-D:[
-"I was called in after the breach.",
-"I never accessed the system.",
-"I was with B most of the night.",
-"I arrived after the alarm.",
-"I didn’t log in at all.",
-"I only observed the aftermath.",
-"I was informed by security.",
-"I never entered the server room.",
-"I checked nothing personally.",
-"I followed instructions strictly.",
-"I was on emergency standby.",
-"I saw A near the terminal.",
-"I never saw C that night.",
-"I had no credentials.",
-"I was outside the building.",
-"I didn’t touch any hardware.",
-"I only received reports.",
-"I stayed in the lobby.",
-"I left shortly after arriving.",
-"I had zero system access."
-]
-};
+const game = cases[Math.floor(Math.random()*cases.length)];
+document.getElementById("hint").textContent = "HINT: "+game.hint;
 
-/* -------- GAME LOGIC -------- */
+const sDiv=document.getElementById("suspects");
 
-let liar;
-
-function startGame(){
-  document.getElementById("result").textContent="";
-  document.getElementById("hint").textContent="";
-
-  const suspects=["A","B","C","D"];
-  liar = suspects[Math.floor(Math.random()*4)];
-
-  const statementsDiv=document.getElementById("statements");
-  statementsDiv.innerHTML="";
-
-  suspects.forEach(s=>{
-    const pool=pools[s];
-    const text=pool[Math.floor(Math.random()*pool.length)];
-
-    const div=document.createElement("div");
-    div.className="statement";
-    div.textContent=`Suspect ${s}: ${text}`;
-    statementsDiv.appendChild(div);
-  });
-
-  const buttonsDiv=document.getElementById("buttons");
-  buttonsDiv.innerHTML="";
-  suspects.forEach(s=>{
-    const btn=document.createElement("button");
-    btn.textContent=`Accuse ${s}`;
-    btn.onclick=()=>check(s);
-    buttonsDiv.appendChild(btn);
-  });
-
-  // Always-valid hint
-  document.getElementById("hint").textContent =
-    "Hint: One suspect is lying. The liar’s statement contradicts the overall situation.";
+for(const k in game.statements){
+  const d=document.createElement("div");
+  d.className="suspect";
+  d.innerHTML=`<b>${k}</b>: ${game.statements[k]}
+  <button onclick="check('${k}')">Accuse ${k}</button>`;
+  sDiv.appendChild(d);
 }
 
-function check(choice){
-  const res=document.getElementById("result");
-  if(choice===liar){
-    res.textContent="✅ Correct. You caught the liar.";
+function check(x){
+  if(x===game.killer){
+    alert("👏 CASE SOLVED! You are a true detective.");
   }else{
-    res.textContent="❌ Wrong accusation. The liar escaped.";
+    alert("❌ Wrong accusation. Reopen the case.");
   }
-  setTimeout(startGame,2000);
 }
-
-startGame();
 </script>
 </body>
 </html>
