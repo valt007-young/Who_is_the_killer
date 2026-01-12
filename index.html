@@ -16,84 +16,211 @@
 <title>Detective Lie Detector</title>
 
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infinite Detective</title>
+
 <style>
 body{
-  background:#111;
-  color:#eee;
-  font-family: serif;
+  margin:0;
+  min-height:100vh;
+  background:radial-gradient(circle at top,#2a2a2a,#000);
   display:flex;
   justify-content:center;
   align-items:center;
-  height:100vh;
+  font-family:Georgia,serif;
+  color:#eee;
 }
 #box{
   width:95%;
-  max-width:500px;
-  border:2px solid #aaa;
+  max-width:540px;
+  background:rgba(20,20,20,0.95);
+  border:2px solid #888;
   padding:20px;
-  background:#1a1a1a;
+  box-shadow:0 0 40px rgba(255,255,255,0.1);
 }
-h1{text-align:center;}
-.suspect{margin:15px 0;}
+h1{text-align:center;margin:5px 0;}
+#env,#rank,#cases{
+  text-align:center;
+  opacity:0.8;
+  margin-bottom:8px;
+}
+#hint{
+  background:#222;
+  padding:12px;
+  border-left:4px solid #aaa;
+  margin:12px 0;
+}
+.suspect{
+  background:#1c1c1c;
+  border:1px solid #444;
+  padding:10px;
+  margin-bottom:12px;
+}
+.suspect b{display:block;margin-bottom:5px;}
 button{
   width:100%;
+  margin-top:8px;
   padding:10px;
-  margin-top:10px;
+  background:#333;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+button:hover{background:#555;}
+#result{
+  text-align:center;
+  font-size:18px;
+  margin-top:12px;
 }
 </style>
 </head>
 
 <body>
 <div id="box">
-  <h1>🕵️ DETECTIVE FILE</h1>
-  <p id="hint"></p>
+  <h1>🕵️ Infinite Detective</h1>
+  <div id="rank"></div>
+  <div id="cases"></div>
+  <div id="env"></div>
+  <div id="hint"></div>
   <div id="suspects"></div>
+  <div id="result"></div>
 </div>
 
 <script>
-const cases = [
-{
- hint:"One suspect claims innocence while secretly contradicting another statement.",
- killer:"B",
- statements:{
-  A:"I was in the library all evening, and I saw C leave before the murder occurred.",
-  B:"A is lying. I never left the dining hall and no one can place me near the scene.",
-  C:"I briefly stepped outside, but I clearly saw B near the crime room.",
-  D:"Everyone is hiding something, but C’s timeline does not add up."
- }
-},
-{
- hint:"The killer denies being seen, but two stories overlap incorrectly.",
- killer:"C",
- statements:{
-  A:"D and I stayed together the whole time.",
-  B:"I saw C washing hands nervously after the incident.",
-  C:"No one saw me after dinner.",
-  D:"A is telling the truth about staying with me."
- }
-}
+const environments = {
+  Home:{
+    hint:[
+      "One person claims to be asleep, but another heard movement.",
+      "Someone says they never left the room, but a light was switched."
+    ],
+    statements:[
+      "I was in my bedroom the whole night.",
+      "I heard footsteps near the kitchen.",
+      "The lights were on when I passed the hallway.",
+      "I never left the living room."
+    ]
+  },
+  Hospital:{
+    hint:[
+      "A suspect claims to be on duty, but records disagree.",
+      "Someone avoided the security cameras."
+    ],
+    statements:[
+      "I was attending patients all night.",
+      "I saw someone leave the ICU nervously.",
+      "The hallway was empty during my round.",
+      "I never entered the restricted ward."
+    ]
+  },
+  Hotel:{
+    hint:[
+      "Room service records contradict a guest’s claim.",
+      "Someone checked out earlier than stated."
+    ],
+    statements:[
+      "I stayed in my room all evening.",
+      "I saw staff near the elevator late at night.",
+      "No one knocked on my door.",
+      "I heard movement from the adjacent room."
+    ]
+  },
+  Office:{
+    hint:[
+      "Keycard logs expose a false alibi.",
+      "Someone accessed a locked section."
+    ],
+    statements:[
+      "I left the office before midnight.",
+      "I never used my keycard after hours.",
+      "Someone was still logged into the system.",
+      "I worked late but stayed at my desk."
+    ]
+  },
+  Train:{
+    hint:[
+      "A passenger changed compartments unexpectedly.",
+      "Someone claims they slept through the stop."
+    ],
+    statements:[
+      "I stayed in my seat the whole journey.",
+      "I saw someone move compartments.",
+      "I never left my coach.",
+      "I was awake during every stop."
+    ]
+  }
+};
+
+const ranks = [
+  "Rookie Detective",
+  "Inspector",
+  "Senior Inspector",
+  "Crime Analyst",
+  "Master Detective",
+  "Legendary Detective 🏆"
 ];
 
-const game = cases[Math.floor(Math.random()*cases.length)];
-document.getElementById("hint").textContent = "HINT: "+game.hint;
+let solved = 0;
+let currentCase = {};
+const suspectsDiv = document.getElementById("suspects");
+const hintDiv = document.getElementById("hint");
+const envDiv = document.getElementById("env");
+const rankDiv = document.getElementById("rank");
+const casesDiv = document.getElementById("cases");
+const resultDiv = document.getElementById("result");
 
-const sDiv=document.getElementById("suspects");
-
-for(const k in game.statements){
-  const d=document.createElement("div");
-  d.className="suspect";
-  d.innerHTML=`<b>${k}</b>: ${game.statements[k]}
-  <button onclick="check('${k}')">Accuse ${k}</button>`;
-  sDiv.appendChild(d);
+function rank(){
+  return ranks[Math.min(Math.floor(solved/3),ranks.length-1)];
 }
 
-function check(x){
-  if(x===game.killer){
-    alert("👏 CASE SOLVED! You are a true detective.");
+function newCase(){
+  resultDiv.textContent="";
+  suspectsDiv.innerHTML="";
+
+  const envKeys = Object.keys(environments);
+  const env = envKeys[Math.floor(Math.random()*envKeys.length)];
+  const data = environments[env];
+
+  const killer = ["A","B","C","D"][Math.floor(Math.random()*4)];
+  currentCase.killer = killer;
+
+  const hint = data.hint[Math.floor(Math.random()*data.hint.length)];
+
+  envDiv.textContent = `Environment: ${env}`;
+  hintDiv.textContent = "HINT: " + hint;
+  rankDiv.textContent = "Rank: " + rank();
+  casesDiv.textContent = `Cases Solved: ${solved}`;
+
+  ["A","B","C","D"].forEach((s,i)=>{
+    let text = data.statements[i];
+    if(s===killer){
+      text += " (statement conflicts with evidence)";
+    }
+    const div=document.createElement("div");
+    div.className="suspect";
+    div.innerHTML=`
+      <b>Suspect ${s}</b>
+      <div>${text}</div>
+      <button onclick="accuse('${s}')">Accuse ${s}</button>
+    `;
+    suspectsDiv.appendChild(div);
+  });
+}
+
+function accuse(s){
+  if(s===currentCase.killer){
+    solved++;
+    resultDiv.textContent="👏 Correct! New case loading...";
+    setTimeout(newCase,2000);
   }else{
-    alert("❌ Wrong accusation. Reopen the case.");
+    resultDiv.textContent="❌ Wrong accusation. Analyze again.";
   }
 }
+
+newCase();
 </script>
 </body>
 </html>
